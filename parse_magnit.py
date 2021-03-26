@@ -72,15 +72,21 @@ class MagnitParse:
     def _parse(self, soup):
         products_a = soup.find_all("a", attrs={"class": "card-sale"})
         for prod_tag in products_a:
-            if prod_tag.attrs.get("href", "http").startswith('http'):
+            is_banner = "card-sale_banner" in prod_tag.get("class")
+            if is_banner:
                 continue
+            is_product = True
             product_data = {}
             for key, func in self.template.items():
                 try:
                     product_data[key] = func(prod_tag)
                 except (AssertionError, AttributeError):
                     pass
-            yield product_data
+                if product_data.get('promo_name', '') in ['Скидка пенсионерам', 'Скидка на категорию']:
+                    is_product = False
+                    break
+            if is_product:
+                yield product_data
 
     def save(self, data):
         collection = self.db["magnit"]
