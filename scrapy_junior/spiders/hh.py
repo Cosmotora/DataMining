@@ -11,9 +11,9 @@ class HHSpider(scrapy.Spider):
     _data_query = {
         'type': 'job',
         'title': '//h1[@data-qa=vacancy-serp__vacancy-title]/span/text()',
-        'salary': '//p[@class="vacancy-salary]/span[@data-qa="bloko-header-2"]/text()',
-        'description': '//div[@data-qa="vacancy-description"]/text()',
-        'skills': '//div[contains(@data-qa, skills-element)]',
+        'salary': '//p[@class="vacancy-salary"]/span[@data-qa="bloko-header-2"]/text()',
+        'description': '//div[@data-qa="vacancy-description"]',
+        'skills': '//div[@class="bloko-tag-list"]/div',
         'employer': '//div[@class="vacancy-company__details"]/a[@data-qa="vacancy-company-name"]/@href',
     }
 
@@ -60,13 +60,13 @@ class HHSpider(scrapy.Spider):
         )
 
     def job_parse(self, response, *args, **kwargs):
-        HHSpider.load_data(response, HHJobLoader, self._data_query)
+        yield from HHSpider.load_data(response, HHJobLoader, self._data_query)
         yield from self._get_follow(
             response, self._data_query['employer'], self.employer_parse,
         )
 
     def employer_parse(self, response, *args, **kwargs):
-        HHSpider.load_data(response, HHEmployerLoader, self._employer_data)
+        yield from HHSpider.load_data(response, HHEmployerLoader, self._employer_data)
         yield from self._get_follow(
             response, self._selectors['employer_job'], self.list_parse,
         )
