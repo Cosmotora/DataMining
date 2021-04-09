@@ -1,6 +1,6 @@
 import scrapy
 
-from ..loaders import HHJobLoader, HHEmployerLoader
+from ..loaders import HHLoader
 
 
 class HHSpider(scrapy.Spider):
@@ -9,19 +9,14 @@ class HHSpider(scrapy.Spider):
     start_urls = ['https://hh.ru/search/vacancy?schedule=remote&L_profession_id=0&area=113']
 
     _data_query = {
-        'type': 'job',
-        'title': '//h1[@data-qa=vacancy-serp__vacancy-title]/span/text()',
-        'salary': '//p[@class="vacancy-salary"]/span[@data-qa="bloko-header-2"]/text()',
-        'description': '//div[@data-qa="vacancy-description"]',
-        'skills': '//div[@class="bloko-tag-list"]/div',
+        'title': '//div[@class="vacancy-title"]//child::text()',
+        'salary': '//p[contains(@class, "vacancy-salary")]//child::text()',
+        'description': '//div[@class="vacancy-description"]//child::text()',
+        'skills': '//div[@class="bloko-tag-list"]/div//span/text()',
         'employer': '//div[@class="vacancy-company__details"]/a[@data-qa="vacancy-company-name"]/@href',
-    }
-
-    _employer_data = {
-        'type': 'employer',
-        'title': '//div[@class="employer-sidebar-header"]/'
-                 'div/h1[@data-qa="bloko-header-1"]/'
-                 'span[@data-qa="company-header-title-name"]/text()',
+        'company_title': '//div[@class="employer-sidebar-header"]/'
+                         'div/h1[@data-qa="bloko-header-1"]/'
+                         'span[@data-qa="company-header-title-name"]/text()',
         'website': '//div[@class="employer-sidebar"]/'
                    'div[@class="employer-sidebar-content"]/'
                    'a[@data-qa="sidebar-company-site"]/@href',
@@ -60,21 +55,23 @@ class HHSpider(scrapy.Spider):
         )
 
     def job_parse(self, response, *args, **kwargs):
-        yield from HHSpider.load_data(response, HHJobLoader, self._data_query)
         yield from self._get_follow(
             response, self._data_query['employer'], self.employer_parse,
         )
+        yield from self.load_data(response)
 
     def employer_parse(self, response, *args, **kwargs):
-        yield from HHSpider.load_data(response, HHEmployerLoader, self._employer_data)
+        yield from self.load_data(response)
         yield from self._get_follow(
             response, self._selectors['employer_job'], self.list_parse,
         )
 
-    @staticmethod
-    def load_data(response, loader, query):
-        loader = loader(response=response)
+    def load_data(self, response):
+        loader = HHLoader(response=response)
         loader.add_value("url", response.url)
-        for key, xpath in query.items():
+        for key, xpath in self._data_query.items():
             loader.add_xpath(key, xpath)
         yield loader.load_item()
+
+    def data_loader(self, response):
+        pass

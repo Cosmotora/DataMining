@@ -20,5 +20,6 @@ class ScrapyJuniorMongoPipeline:
         self.db = client["hh_parse"]
 
     def process_item(self, item, spider):
-        self.db[spider.name].insert_one(item)
+        db_name = 'jobs' if 'employer' in item else 'employers'
+        self.db[db_name].insert_one(item)
         return item

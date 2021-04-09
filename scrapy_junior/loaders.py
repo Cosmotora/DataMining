@@ -1,50 +1,32 @@
 from urllib.parse import urljoin
 from scrapy.loader import ItemLoader
 from scrapy import Selector
-from itemloaders.processors import TakeFirst, MapCompose
+from itemloaders.processors import TakeFirst, MapCompose, Compose
 
 
-def clear_salary(salary: str) -> float:
-    try:
-        salary = salary.split()[1]
-        result = float(salary.replace("\xa0", ""))
-    except ValueError:
-        result = None
-    return result
+def salary_to_text(items):
+    return ' '.join(items)
 
 
-def get_description(item: str):
-    selector = Selector(text=item)
-    data = {
-        'experience': selector.xpath('//span[@data-qa="vacancy-experience"]/text()').extract_first(),
-        'requirements': selector.xpath('//div[@data-qa="vacancy-description"]//span/text()')
-    }
-    return data
+def description_to_text(items):
+    return '\n'.join(items).replace('\n:', ':').replace('\n,', ',')
 
 
-def get_skills(item: str) -> list:
-    selector = Selector(text=item)
-    data = selector.xpath("//span[@data-qa='bloko-tag__text']/text()").extract()
-    return data
+def get_employer(url):
+    return urljoin('https://hh.ru/', url)
 
 
-def get_employer(text):
-    result = f'https://hh.ru{text}'
-    return result
-
-
-class HHJobLoader(ItemLoader):
+class HHLoader(ItemLoader):
     default_item_class = dict
-    type_out = TakeFirst()
     url_out = TakeFirst()
+    title_in = salary_to_text
     title_out = TakeFirst()
-    salary_in = MapCompose(clear_salary)
+    salary_in = salary_to_text
     salary_out = TakeFirst()
-    skills_in = MapCompose(get_skills)
-    description_in = MapCompose(get_description)
-    employer_in = MapCompose(get_employer)
+    description_in = description_to_text
+    description_out = TakeFirst()
+    employer_in = Compose(TakeFirst(), get_employer)
     employer_out = TakeFirst()
-
-
-class HHEmployerLoader(ItemLoader):
-    pass
+    company_title_out = TakeFirst()
+    website_out = TakeFirst()
+    business_out = TakeFirst()
