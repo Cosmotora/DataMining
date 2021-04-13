@@ -8,12 +8,15 @@ class HHSpider(scrapy.Spider):
     allowed_domains = ['hh.ru']
     start_urls = ['https://hh.ru/search/vacancy?schedule=remote&L_profession_id=0&area=113']
 
-    _data_query = {
-        'title': '//div[@class="vacancy-title"]//child::text()',
+    _job_data_query = {
+        'title': '//div[@class="vacancy-title"]//h1/child::text()',
         'salary': '//p[contains(@class, "vacancy-salary")]//child::text()',
-        'description': '//div[@class="vacancy-description"]//child::text()',
+        'description': '//div[@data-qa="vacancy-description"]//child::text()',
         'skills': '//div[@class="bloko-tag-list"]/div//span/text()',
         'employer': '//div[@class="vacancy-company__details"]/a[@data-qa="vacancy-company-name"]/@href',
+    }
+
+    _employer_data_query = {
         'company_title': '//div[@class="employer-sidebar-header"]/'
                          'div/h1[@data-qa="bloko-header-1"]/'
                          'span[@data-qa="company-header-title-name"]/text()',
@@ -28,6 +31,7 @@ class HHSpider(scrapy.Spider):
     _selectors = {
         "pagination": "//div[@data-qa='pager-block']//a[@data-qa='pager-next']//@href",
         "job": "//div[@class='vacancy-serp-item']//a[@data-qa='vacancy-serp__vacancy-title']/@href",
+        "employer": '//a[contains(@data-qa, "vacancy-employer")]/@href',
         "employer_job": '//div[@class="employer-sidebar"]/'
                         'div[@class="employer-sidebar-content"]/'
                         'div[@class="employer-sidebar-block"]/'
@@ -42,36 +46,28 @@ class HHSpider(scrapy.Spider):
             yield response.follow(link, callback=callback, cb_kwargs=kwargs)
 
     def parse(self, response, *args, **kwargs):
-        yield from self._get_follow(
-            response, self._selectors["pagination"], self.list_parse,
-        )
-
-    def list_parse(self, response, *args, **kwargs):
-        yield from self._get_follow(
-            response, self._selectors["pagination"], self.list_parse,
-        )
-        yield from self._get_follow(
-            response, self._selectors["job"], self.job_parse,
-        )
+        callbacks = {'pagination': self.parse,
+                     'job': self.job_parse,
+                     'employer': self.employer_parse,
+                     'employer_job': self.parse}
+        for key, xpath in self._selectors.items():
+            yield from self._get_follow(
+                response, self._selectors[key], callbacks[key]
+            )
 
     def job_parse(self, response, *args, **kwargs):
-        yield from self._get_follow(
-            response, self._data_query['employer'], self.employer_parse,
-        )
-        yield from self.load_data(response)
+        yield HHSpider.load_data(response, self._job_data_query)
 
     def employer_parse(self, response, *args, **kwargs):
-        yield from self.load_data(response)
+        yield HHSpider.load_data(response, self._employer_data_query)
         yield from self._get_follow(
-            response, self._selectors['employer_job'], self.list_parse,
+            response, self._selectors['employer_job'], self.parse
         )
 
-    def load_data(self, response):
+    @staticmethod
+    def load_data(response, query):
         loader = HHLoader(response=response)
         loader.add_value("url", response.url)
-        for key, xpath in self._data_query.items():
+        for key, xpath in query.items():
             loader.add_xpath(key, xpath)
-        yield loader.load_item()
-
-    def data_loader(self, response):
-        pass
+        return loader.load_item()

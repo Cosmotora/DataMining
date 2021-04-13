@@ -17,7 +17,7 @@ class ScrapyJuniorParsePipeline:
 class ScrapyJuniorMongoPipeline:
     def __init__(self):
         client = pymongo.MongoClient()
-        self.db = client["hh_parse"]
+        self.db = client["scrapy_parse"]
 
     def process_item(self, item, spider):
         db_name = 'jobs' if 'employer' in item else 'employers'
