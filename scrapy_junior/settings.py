@@ -47,10 +47,10 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-SPIDER_MIDDLEWARES = {
-    "scrapy_junior.pipelines.ScrapyJuniorParsePipeline": 300,
-    "scrapy_junior.pipelines.ScrapyJuniorMongoPipeline": 400,
-}
+# SPIDER_MIDDLEWARES = {
+#     "scrapy_junior.pipelines.ScrapyJuniorParsePipeline": 300,
+#     "scrapy_junior.pipelines.ScrapyJuniorMongoPipeline": 400,
+# }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -66,9 +66,10 @@ SPIDER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'scrapy_junior.pipelines.ScrapyJuniorPipeline': 300,
-# }
+ITEM_PIPELINES = {
+    "scrapy_junior.pipelines.ScrapyJuniorParsePipeline": 300,
+    "scrapy_junior.pipelines.ScrapyJuniorMongoPipeline": 400,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
