@@ -3,6 +3,17 @@ import scrapy
 from ..loaders import HHJobLoader, HHEmployerLoader
 
 
+def get_link(response):
+    employer_id = response.url.split('/')[-1]
+    try:
+        employer_id = employer_id[:employer_id.index('?')]
+    except ValueError:
+        pass
+    link = 'https://spb.hh.ru/search/' \
+           f'vacancy?st=searchVacancy&from=employerPage&employer_id={employer_id}'
+    return link
+
+
 class HHSpider(scrapy.Spider):
     name = 'hh'
     allowed_domains = ['hh.ru']
@@ -29,22 +40,26 @@ class HHSpider(scrapy.Spider):
         'description': '//div[@data-qa="company-description-text"]//child::text()'
     }
 
+    _custom_employer_data_query = {
+        'title': '//h3[contains(@class, "b-employerpage-vacancies-title")]/text()',
+    }
+
     _selectors = {
         "pagination": "//div[@data-qa='pager-block']//a[@data-qa='pager-next']//@href",
         "job": "//div[@class='vacancy-serp-item']//a[@data-qa='vacancy-serp__vacancy-title']/@href",
         "employer": '//a[contains(@data-qa, "vacancy-employer")]/@href',
-        "employer_job": '//div[@class="employer-sidebar"]/'
-                        'div[@class="employer-sidebar-content"]/'
-                        'div[@class="employer-sidebar-block"]/'
-                        'a[@data-qa="employer-page__employer-vacancies-link"]/@href',
+        "employer_job": '//a[@data-qa="employer-page__employer-vacancies-link"]/@href',
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _get_follow(self, response, selector, callback, **kwargs):
-        for link in response.xpath(selector):
-            yield response.follow(link, callback=callback, cb_kwargs=kwargs)
+    def _get_follow(self, response, selector, callback, custom=False, **kwargs):
+        if not custom:
+            for link in response.xpath(selector):
+                yield response.follow(link, callback=callback, cb_kwargs=kwargs)
+        else:
+            yield response.follow(get_link(response), callback=callback, cb_kwargs=kwargs)
 
     def parse(self, response, *args, **kwargs):
         callbacks = {'pagination': self.parse,
@@ -61,10 +76,16 @@ class HHSpider(scrapy.Spider):
         yield HHSpider.load_data(response, HHJobLoader, self._job_data_query)
 
     def employer_parse(self, response, *args, **kwargs):
-        yield HHSpider.load_data(response, HHEmployerLoader, self._employer_data_query)
-        yield from self._get_follow(
-            response, self._selectors['employer_job'], self.parse
-        )
+        if response.xpath(self._selectors['employer_job']):
+            yield HHSpider.load_data(response, HHEmployerLoader, self._employer_data_query)
+            yield from self._get_follow(
+                response, self._selectors['employer_job'], self.parse
+            )
+        else:
+            yield HHSpider.load_data(response, HHEmployerLoader, self._custom_employer_data_query)
+            yield from self._get_follow(
+                response, None, self.parse, custom=True
+            )
 
     @staticmethod
     def load_data(response, loader, query):

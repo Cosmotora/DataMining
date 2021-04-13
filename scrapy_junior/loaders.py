@@ -8,6 +8,13 @@ def clean_text_items(items):
     return items
 
 
+def clean_title(text):
+    if 'Вакансии компании ' not in text:
+        return text
+    else:
+        return text.replace('Вакансии компании ', '')[1:-1]
+
+
 def to_plain_text(items):
     items = clean_text_items(items)
     return ' '.join(items).strip()
@@ -24,7 +31,7 @@ def get_employer(url):
 class HHDefaultLoader(ItemLoader):
     default_item_class = dict
     url_out = TakeFirst()
-    title_in = to_plain_text
+    title_in = Compose(to_plain_text, clean_title)
     title_out = TakeFirst()
     description_in = description_to_text
     description_out = TakeFirst()
