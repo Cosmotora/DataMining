@@ -3,12 +3,18 @@ from scrapy.loader import ItemLoader
 from itemloaders.processors import TakeFirst, Compose
 
 
+def clean_text_items(items):
+    items = [i.strip().replace('\xa0', '') for i in items if i.strip()]
+    return items
+
+
 def to_plain_text(items):
-    return ' '.join([i.strip().replace('\xa0', '') for i in items if i]).strip()
+    items = clean_text_items(items)
+    return ' '.join(items).strip()
 
 
 def description_to_text(items):
-    return '\n'.join(items).replace('\n:', ':').replace('\n,', ',')
+    return '\n'.join(clean_text_items(items))
 
 
 def get_employer(url):
