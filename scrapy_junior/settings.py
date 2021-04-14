@@ -16,7 +16,8 @@ LOG_ENABLE = True
 LOG_LEVEL = 'DEBUG'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/89.0.4389.114 Edg/89.0.774.68'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+             'Chrome/89.0.4389.114 Safari/537.36 Edg/89.0.774.75'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -36,7 +37,7 @@ DOWNLOAD_DELAY = 3
 COOKIES_ENABLED = True
 
 # Disable Telnet Console (enabled by default)
-# TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
 DEFAULT_REQUEST_HEADERS = {
@@ -47,14 +48,16 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    'scrapy_junior.middlewares.ScrapyJuniorSpiderMiddleware': 543,
+#     'scrapy_junior.middlewares.ScrapyJuniorSpiderMiddleware': 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy_junior.middlewares.ScrapyJuniorDownloaderMiddleware': 543,
-}
+# DOWNLOADER_MIDDLEWARES = {
+    # 'scrapy_junior.middlewares.ScrapyJuniorDownloaderMiddleware': 543,
+    # "rotating_proxies.middlewares.RotatingProxyMiddleware": 610,
+    # "rotating_proxies.middlewares.BanDetectionMiddleware": 620,
+# }
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -92,3 +95,7 @@ ITEM_PIPELINES = {
 # HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+ROTATING_PROXY_LIST_PATH = (
+    r"C:\Dev\GeekBrains\DataMining\proxies"
+)
