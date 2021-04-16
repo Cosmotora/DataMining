@@ -34,7 +34,7 @@ DOWNLOAD_DELAY = 10
 # CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-COOKIES_ENABLED = True
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 TELNETCONSOLE_ENABLED = False
@@ -53,11 +53,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy_junior.middlewares.ScrapyJuniorDownloaderMiddleware': 543,
-    # "rotating_proxies.middlewares.RotatingProxyMiddleware": 610,
-    # "rotating_proxies.middlewares.BanDetectionMiddleware": 620,
-}
+# DOWNLOADER_MIDDLEWARES = {
+#     'scrapy_junior.middlewares.ScrapyJuniorDownloaderMiddleware': 543,
+# }
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -95,7 +93,3 @@ ITEM_PIPELINES = {
 # HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-
-ROTATING_PROXY_LIST_PATH = (
-    r"C:\Dev\GeekBrains\DataMining\proxies"
-)

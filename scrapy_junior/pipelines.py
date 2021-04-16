@@ -19,7 +19,7 @@ class ScrapyJuniorParsePipeline:
 class ScrapyJuniorMongoPipeline:
     def __init__(self):
         client = pymongo.MongoClient()
-        self.db = client["scrapy_junior"]
+        self.db = client["scrapy_parse"]
 
     def process_item(self, item, spider):
         self.db[spider.name].insert_one(item)

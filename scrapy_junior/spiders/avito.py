@@ -1,21 +1,17 @@
 import scrapy
-from scrapy import Request
-from time import sleep
-from random import randint
 import json
 from ..loaders import AvitoLoader
-from itemadapter import ItemAdapter
 
 
 class AvitoSpider(scrapy.Spider):
     name = 'avito'
     allowed_domains = ['avito.ru']
-    start_urls = ['https://www.avito.ru/krasnodar/kvartiry/prodam-ASgBAgICAUSSA8YQ']
+    start_urls = ['https://www.avito.ru/krasnodar/kvartiry/prodam-ASgBAgICAUSSA8YQ?p=1']
 
     def __init__(self, **kwargs):
         super(AvitoSpider, self).__init__(**kwargs)
         self.page = 1
-        self.url = self.start_urls[0] + f'?p={self.page}'
+        self.url = self.start_urls[0]
         self.idx = self.url.index('=') + 1
 
     def _get_pagination(self, response, *args, **kwargs):
@@ -45,7 +41,7 @@ class AvitoSpider(scrapy.Spider):
 
     def author_parse(self, response, flat, **kwargs):
         author_data = {
-            'author': response.xpath('//a[@title="Нажмите, чтобы перейти в профиль"]/@href'),
+            'author': response.xpath('//a[contains(@title, "Нажмите, чтобы перейти ")]/@href').extract_first(),
             # 'phone': response.xpath('//style[contains(text(), .ymaps-2-1-78-panorama-screen"]/text()'),
         }
         yield from self.flat_parse(flat, author_data)
@@ -60,8 +56,8 @@ class AvitoSpider(scrapy.Spider):
                 'description': data.get('description'),
                 'photos': data.get('gallery').get('image_large_urls')
             },
-            'author': author_data['author'],
-            'phone': author_data.get('phone'),
+            'author': author_data.get('author'),
+            # 'phone': author_data.get('phone'),
         }
         loader = AvitoLoader()
         for key, value in flat.items():
