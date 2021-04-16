@@ -11,28 +11,14 @@ class AvitoSpider(scrapy.Spider):
     name = 'avito'
     allowed_domains = ['avito.ru']
     start_urls = ['https://www.avito.ru/krasnodar/kvartiry/prodam-ASgBAgICAUSSA8YQ']
-    handle_httpstatus_list = [403]
 
-    def __init__(self):
-        super(AvitoSpider, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super(AvitoSpider, self).__init__(**kwargs)
         self.page = 1
-        self.url = self.start_urls[0] + f'?p={page}'
+        self.url = self.start_urls[0] + f'?p={self.page}'
         self.idx = self.url.index('=') + 1
-        self._template = {
 
-        }
-
-    def _availibility_check(self, response):
-        c = 0
-        while response.status in self.handle_httpstatus_list:
-            c += 1
-            if c > 5:
-                scrapy.Spider.close(AvitoSpider, '403')
-            sleep(randint(60, 65))
-            response = Request(response.url, callback=self.parse)
-        return True
-
-    def _get_follow(self, response, *args, **kwargs):
+    def _get_pagination(self, response, *args, **kwargs):
         self.pagination_total = int(response.xpath("//span[contains(@data-marker,'page(')]/"
                                                    "@data-marker").extract()[-1][5:-1])
         while self.page <= self.pagination_total:
@@ -40,23 +26,44 @@ class AvitoSpider(scrapy.Spider):
             self.page += 1
             self.url = self.url[:self.idx] + f'{self.page}'
 
+    def _get_follow(self, response, url, callback, **kwargs):
+        yield response.follow(url=url, callback=callback, cb_kwargs=kwargs)
+
     def _get_data(self, response):
         data = json.loads(response.xpath('//div[@class="js-initial"]/@data-state').extract_first())
         return data
 
-    def parse(self, response):
-        if self._availibility_check(response):
-            yield from self._get_follow(response)
+    def parse(self, response, **kwargs):
+        yield from self._get_pagination(response)
 
     def catalog_parse(self, response, *args, **kwargs):
         data = self._get_data(response)
         for flat in data['catalog']['items']:
             if flat['type'] == 'item':
-                yield self.flat_parse(flat)
+                author_url = flat.get('urlPath') + '?showPhoneNumber'
+                yield from self._get_follow(response, author_url, callback=self.author_parse, flat=flat)
 
-    def flat_parse(self, data):
-        flat = {}
-        for key, func in self._template.items():
-            flat[key] = func(data)
-        loader = AvitoLoader(item=ItemAdapter(flat))
+    def author_parse(self, response, flat, **kwargs):
+        author_data = {
+            'author': response.xpath('//a[@title="Нажмите, чтобы перейти в профиль"]/@href'),
+            # 'phone': response.xpath('//style[contains(text(), .ymaps-2-1-78-panorama-screen"]/text()'),
+        }
+        yield from self.flat_parse(flat, author_data)
+
+    def flat_parse(self, data, author_data):
+        flat = {
+            'url': data.get('urlPath'),
+            'title': data.get('title'),
+            'price': data.get('priceDetailed'),
+            'address': data.get('addressDetailed'),
+            'info': {
+                'description': data.get('description'),
+                'photos': data.get('gallery').get('image_large_urls')
+            },
+            'author': author_data['author'],
+            'phone': author_data.get('phone'),
+        }
+        loader = AvitoLoader()
+        for key, value in flat.items():
+            loader.add_value(key, value)
         yield loader.load_item()

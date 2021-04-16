@@ -28,10 +28,10 @@ class ScrapyJuniorMongoPipeline:
 
 class ScrapyJuniorDownloadPipeline(ImagesPipeline):
     def get_media_requests(self, item, info):
-        for url in item.get("photos", []):
+        for url in item.get('info').get("photos", []):
             yield Request(url)
 
     def item_completed(self, results, item, info):
-        if "photos" in item:
-            item["photos"] = [itm[1] for itm in results]
+        if "photos" in item.get('info', []):
+            item['info']["photos"] = [itm[1] for itm in results]
         return item
